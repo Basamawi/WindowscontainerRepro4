@@ -1,0 +1,52 @@
+name: DeployToPROD
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main_ ]
+
+env:
+  CONFIGURATION: Release
+  APP: '.\Empty.sln'
+  CONTAINER: 'reprowindow.azurecr.io'
+  REPOSITORY: 'prod'
+  TAG: 'latest'
+
+jobs:
+  build-and-deploy:
+    runs-on: windows-latest
+    strategy:
+      matrix:
+        nuget-version: [4.x]
+
+    steps:
+    - name: checkout
+      uses: actions/checkout@v2
+      
+    - name: nuget ${{ matrix.nuget-version }}
+      uses: nuget/setup-nuget@v1
+      with:
+        nuget-version: ${{ matrix.nuget-version }}
+
+    - name: nuget restore
+      run: nuget restore
+  
+    - name: add msbuild to path
+      uses: microsoft/setup-msbuild@v1.0.2
+
+    - name: run msbuild
+      run: msbuild /p:Configuration=${{ env.CONFIGURATION }} /p:DeployOnBuild=True /p:AutoParameterizationWebConfigConnectionStrings=True ${{ env.APP }}
+
+    - name: azure docker login
+      uses: azure/docker-login@v1
+      with:
+        login-server: ${{ secrets.REGISTRY_LOGIN_SERVER_PROD }}
+        username: ${{ secrets.REGISTRY_USERNAME_PROD }}
+        password: ${{ secrets.REGISTRY_PASSWORD_PROD }}
+
+    - name: build and push image    
+      run: |
+        docker build --no-cache -f Dockerfile-${{ env.CONFIGURATION }} -t ${{ env.REPOSITORY }}:${{ env.TAG }} .
+        docker tag ${{ env.REPOSITORY }}:${{ env.TAG }} ${{ env.CONTAINER }}/${{ env.REPOSITORY }}:${{ env.TAG }}
+        docker push ${{ env.CONTAINER }}/${{ env.REPOSITORY }}:${{ env.TAG }}

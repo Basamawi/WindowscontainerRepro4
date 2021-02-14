@@ -1,0 +1,8 @@
+version: '3.4'
+
+services:
+  empty:
+    image: ${DOCKER_REGISTRY-}empty
+    build:
+      context: .\Empty
+      dockerfile: Dockerfile
