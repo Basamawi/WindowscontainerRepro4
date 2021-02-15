@@ -11,10 +11,18 @@ namespace Empty.Controllers
     {
         // GET api/values
         public IEnumerable<string> Get()
-        {
+        {   try
+            {
+
             Entities DB = new Entities();
             var list =  DB.EMPs.ToList();
             return new string[] { list.ToList()[0].Name, list.ToList()[1].Name };
+            }
+            catch (System.Exception e)
+            {
+               Console.WriteLine(e.ToString());
+            }
+             return new string[] { "Error!" };
         }
 
         // GET api/values/5
