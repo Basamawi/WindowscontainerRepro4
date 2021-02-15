@@ -21,6 +21,7 @@ namespace Empty.Controllers
             catch (System.Exception e)
             {
                Console.WriteLine(e.ToString());
+                return new string[] { e.ToString() };
             }
              return new string[] { "Error!" };
         }
